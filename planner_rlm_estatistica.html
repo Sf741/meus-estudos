@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planner RLM + Estatística | DETRAN/AL 2026</title>
+<style>
+  :root{
+    --navy:#0f2350; --navy-2:#1b3a72; --gold:#c9962f; --gold-soft:#f6e9c8;
+    --bg:#f4f6fa; --card:#ffffff; --ink:#141a29; --ink-2:#4b5568; --ink-3:#8b93a5;
+    --line:#e3e7f0;
+    --RLM:#1d4ed8; --RLM-soft:#dbeafe;
+    --EST:#7c3aed; --EST-soft:#ede9fe;
+    --ok:#15803d; --ok-soft:#dcfce7;
+    --warn:#b45309; --late:#c02626;
+    --sh:0 1px 2px rgba(16,28,60,.06), 0 2px 8px rgba(16,28,60,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Inter,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  header{background:linear-gradient(120deg,#0b1b3d 0%,#1b3a72 100%);color:#fff;padding:20px 28px;border-bottom:3px solid var(--gold)}
+  header h1{font-size:20px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  header h1 .tag{background:var(--gold);color:#22180a;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.4px}
+  header h1 .badge{background:#dc2626;color:#fff;font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:800;letter-spacing:.5px}
+  header p{font-size:12.5px;opacity:.85;margin-top:4px}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 24px 60px}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+  .stat{background:var(--card);border-radius:10px;padding:13px 16px;box-shadow:var(--sh);border-left:4px solid var(--navy-2)}
+  .stat .v{font-size:22px;font-weight:700;line-height:1.1}
+  .stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2);font-weight:700;margin-top:3px}
+  .stat.gold{border-left-color:var(--gold)}
+  .stat.ok{border-left-color:var(--ok)}
+  .stat.rlm{border-left-color:var(--RLM)}
+  .stat.est{border-left-color:var(--EST)}
+
+  .bar{height:9px;border-radius:6px;background:#e7ebf3;overflow:hidden;margin-top:7px}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--navy-2),var(--gold))}
+  .bar > i.rlm{background:linear-gradient(90deg,var(--RLM),#60a5fa)}
+  .bar > i.est{background:linear-gradient(90deg,var(--EST),#a78bfa)}
+
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;background:var(--card);padding:5px;border-radius:10px;box-shadow:var(--sh)}
+  .tab{border:0;background:transparent;font:inherit;font-weight:600;font-size:13px;color:var(--ink-2);padding:9px 15px;border-radius:7px;cursor:pointer}
+  .tab:hover{background:#eef1f7}
+  .tab.on{background:var(--navy);color:#fff}
+  .tab .n{background:rgba(255,255,255,.22);border-radius:8px;padding:0 6px;margin-left:5px;font-size:11px}
+  .tab:not(.on) .n{background:#e7ebf3;color:var(--ink-2)}
+  .pane{display:none} .pane.on{display:block}
+
+  .panel{background:var(--card);border-radius:12px;box-shadow:var(--sh);padding:18px;margin-bottom:16px}
+  .panel > h2{font-size:15px;font-weight:700;padding-bottom:10px;margin-bottom:14px;border-bottom:2px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .panel > h2 small{font-weight:600;font-size:11.5px;color:var(--ink-3)}
+
+  .aviso{background:var(--gold-soft);border-left:4px solid var(--gold);border-radius:8px;padding:11px 13px;font-size:12.5px;margin-bottom:14px}
+  .aviso b{color:#6b4d0c}
+  .aviso.rlm{background:var(--RLM-soft);border-left-color:var(--RLM)}
+  .aviso.rlm b{color:#1e3a8a}
+  .aviso.est{background:var(--EST-soft);border-left-color:var(--EST)}
+  .aviso.est b{color:#5b21b6}
+  .aviso.ok{background:var(--ok-soft);border-left-color:var(--ok)}
+  .aviso.ok b{color:#14532d}
+
+  /* sessão card */
+  .ses{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px;border-left:5px solid var(--RLM);background:#fff}
+  .ses.est{border-left-color:var(--EST)}
+  .ses.done{background:#f6faf7;border-left-color:var(--ok)}
+  .ses .top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .ses .top h3{font-size:14px;font-weight:700;flex:1;min-width:200px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .ses .top .meta{font-size:11.5px;color:var(--ink-2)}
+  .badge-tipo{font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:20px;color:#fff;flex:none}
+  .badge-tipo.RLM{background:var(--RLM)}
+  .badge-tipo.EST{background:var(--EST)}
+  .chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);background:#fff;cursor:pointer;font-size:13px;line-height:1;color:transparent;flex:none;font-weight:800}
+  .chk.on{background:var(--ok);border-color:var(--ok);color:#fff}
+
+  .sessao{font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:20px;background:var(--navy);color:#fff;flex:none}
+  .sessao.est{background:var(--EST)}
+
+  .dica{font-size:12px;line-height:1.5;color:var(--ink-2);background:#f8fafc;border-radius:8px;padding:9px 11px;border-left:3px solid var(--gold);margin-top:8px}
+  .dica b{color:var(--ink)}
+  .dica code{background:#eef1f7;padding:1px 5px;border-radius:4px;font-family:Consolas,monospace;font-size:11.5px;color:var(--navy-2)}
+  .dica .peg{color:var(--late);font-weight:700}
+
+  .meta-row{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-top:6px}
+  .meta-row span b{color:var(--ink)}
+
+  .form{background:#fafbff;border:1px dashed #c7d2fe;border-radius:8px;padding:10px 12px;margin-top:9px;font-size:12px;font-family:Consolas,monospace;color:#1e293b}
+  .form b{color:var(--navy-2)}
+
+  /* cronograma linhas */
+  .lin{border-left:2px solid var(--line);padding:0 0 12px 16px;margin-left:6px;position:relative}
+  .lin:before{content:"";position:absolute;left:-6px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--navy-2)}
+  .lin.rlm:before{background:var(--RLM)}
+  .lin.est:before{background:var(--EST)}
+  .lin.hoje:before{background:var(--gold);box-shadow:0 0 0 4px rgba(201,150,47,.25)}
+  .lin .dt{font-size:11px;font-weight:700;color:var(--ink-2);text-transform:capitalize}
+  .lin .cn{font-size:12.5px;margin-top:2px}
+  .lin .cn b{color:var(--ink)}
+  .lin .cn small{color:var(--ink-3);font-size:11px;margin-left:4px}
+
+  .cols{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+  @media(max-width:980px){.cols{grid-template-columns:1fr}}
+
+  /* tabela de pesos */
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+  th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line)}
+  th{background:#f1f5f9;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-2);font-weight:700}
+  tr:last-child td{border-bottom:0}
+  td.pct{text-align:right;font-weight:700;color:var(--navy-2)}
+  td.pct.hot{color:var(--late)}
+  td.ac{text-align:right}
+  .pct-bar{display:inline-block;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--RLM),#60a5fa);vertical-align:middle;margin-right:5px}
+
+  .btn{border:1px solid var(--line);background:#fff;font:inherit;font-size:12px;font-weight:600;color:var(--ink-2);padding:6px 11px;border-radius:7px;cursor:pointer}
+  .btn:hover{background:#eef1f7;color:var(--ink)}
+  .btn.danger{color:var(--late);border-color:#f0b4b4}
+  .btn.danger:hover{background:#fff3f3}
+
+  footer{text-align:center;font-size:11px;color:var(--ink-3);padding:18px 0 0}
+  .vazio{color:var(--ink-3);font-size:12.5px;padding:14px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>Planner RLM + Estatística <span class="tag">DETRAN/AL 2026</span> <span class="badge">PROVA 20/09/2026</span></h1>
+  <p>11 sessões RLM (qua/sáb) + 3 sessões Estatística (ter) · 40 dias · 206 questões-alvo · início 11/08/2026</p>
+</header>
+
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs">
+    <button class="tab on" data-p="cron">Cronograma</button>
+    <button class="tab" data-p="rlm">Sessões RLM <span class="n" id="nRlm">0/11</span></button>
+    <button class="tab" data-p="est">Estatística <span class="n" id="nEst">0/3</span></button>
+    <button class="tab" data-p="diag">Diagnóstico &amp; pesos</button>
+  </div>
+
+  <!-- CRONOGRAMA -->
+  <div class="pane on" id="p-cron">
+    <div class="cols">
+      <div class="panel">
+        <h2>Cronograma dia a dia <small id="cronSub"></small></h2>
+        <div id="cron"></div>
+      </div>
+      <div>
+        <div class="panel">
+          <h2>Como usar</h2>
+          <p style="font-size:12.5px;color:var(--ink-2);margin-bottom:10px">
+            <b>RLM</b>: quartas e sábados · ~60 min por sessão · meta principal são <b>questões CEBRASPE</b> (TEC + banco).
+            <br><b>Estatística</b>: terças (19/08, 26/08, 02/09) · foco em <b>definições + cálculos com 3-5 dados</b>. Não investir em inferência, regressão ou ANOVA.
+            <br>Marque a checkbox ao concluir — progresso salva automaticamente neste navegador.
+          </p>
+          <div class="legend" style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink-2);align-items:center">
+            <span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--RLM);margin-right:4px;vertical-align:-1px"></i>RLM</span>
+            <span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--EST);margin-right:4px;vertical-align:-1px"></i>Estatística</span>
+            <span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--ok);margin-right:4px;vertical-align:-1px"></i>Concluído</span>
+            <span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--gold);margin-right:4px;vertical-align:-1px"></i>Hoje</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn" onclick="exportar()">Salvar backup do progresso</button>
+            <button class="btn" onclick="document.getElementById('imp').click()">Restaurar backup</button>
+            <input type="file" id="imp" accept="application/json" style="display:none" onchange="importar(this)">
+            <button class="btn danger" onclick="zerar()">Zerar marcações</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Meta global</h2>
+          <div class="meta-row" style="flex-direction:column;gap:6px;margin-top:0">
+            <div><b>RLM:</b> 11 sessões · 178 questões (média 16,2/sessão)</div>
+            <div><b>Estatística:</b> 3 sessões · 28 questões (média 9,3/sessão)</div>
+            <div><b>Total:</b> <b>206 questões</b> em ~15 horas de estudo</div>
+            <div><b>Tempo médio por questão:</b> 2 min (simulado na Sess 11)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RLM -->
+  <div class="pane" id="p-rlm">
+    <div class="aviso rlm">
+      <b>Foco RLM:</b> Argumentos (Métodos T.V.) e Equivalências Lógicas somam ~40% das questões CEBRASPE. São os dois pontos fracos do seu diagnóstico. Tratamento prioritário nas 4 primeiras sessões.
+    </div>
+    <div id="listaRlm"></div>
+  </div>
+
+  <!-- ESTATÍSTICA -->
+  <div class="pane" id="p-est">
+    <div class="aviso est">
+      <b>Escopo do edital:</b> "Noções de estatística: média, moda, mediana e desvio-padrão". Cargo de nível superior administrativo. Foco em questões conceituais e cálculos com 3-5 dados. <b>Não cairá</b> inferência, regressão, teste de hipóteses ou ANOVA. Apenas acertar se aparecer.
+    </div>
+    <div id="listaEst"></div>
+    <div class="panel" style="margin-top:18px">
+      <h2>Pegadinhas clássicas CEBRASPE <small>decorar antes da prova</small></h2>
+      <ul style="font-size:12.5px;color:var(--ink-2);padding-left:20px;line-height:1.7">
+        <li>Trocar "média" por "mediana" ou "moda" na assertiva — leia com calma.</li>
+        <li>Confundir desvio-padrão com variância (DP = √variância).</li>
+        <li>Achar que somar constante muda a média mas não muda o DP (correto) e que multiplicar por constante muda ambos.</li>
+        <li>"A mediana não é afetada por valores extremos" — <b>CERTO</b>. A média, sim.</li>
+        <li>Em dados agrupados, moda = classe modal; mediana = classe que divide a área em 50%.</li>
+        <li>Se n é ímpar, mediana = valor central (posição (n+1)/2). Se par, média dos 2 centrais.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- DIAGNÓSTICO -->
+  <div class="pane" id="p-diag">
+    <div class="cols">
+      <div class="panel">
+        <h2>Seu desempenho (TEC · últimos 3 meses)</h2>
+        <div class="aviso ok"><b>Bom (≥80%):</b> Tabela Verdade, Diagramas/Categóricas, Tautologia, Raciocínio Crítico, Operadores Lógicos.</div>
+        <div class="aviso" style="background:#fee2e2;border-left-color:var(--late)"><b style="color:#7f1d1d">Ponto crítico:</b> Argumentos (Métodos T.V.) — 25 questões, 57% de acerto. É o tema mais cobrado depois de Equivalências.</div>
+        <table>
+          <thead><tr><th>Tema</th><th class="ac">Questões</th><th class="ac">Acerto</th></tr></thead>
+          <tbody id="diagTec"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>Peso CEBRASPE (banco)</h2>
+        <div class="aviso"><b>73% das questões</b> vêm de apenas 4 temas: Equivalências, Tabela Verdade, Argumentos e Operadores.</div>
+        <table>
+          <thead><tr><th>Tema</th><th class="ac">Questões</th><th class="ac">%</th></tr></thead>
+          <tbody id="diagPeso"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>Dados salvos apenas neste navegador (localStorage). Faça o backup antes de limpar o histórico.</footer>
+</div>
+
+<script>
+/* ====================== DADOS ====================== */
+const INICIO = new Date(2026,7,11); // 11/08/2026
+const PROVA  = new Date(2026,8,20); // 20/09/2026
+const REAL   = new Date();          // hoje (referência)
+
+const SESSOES_RLM = [
+  {n:1,  d:'2026-08-13', t:'Argumentos Métodos T.V. — teoria + 15q',
+   meta:15, peso:'PIOR (57%) · CRÍTICO',
+   dica:'<b>Método dos argumentos (CEBRASPE):</b> 1) Monte a tabela-verdade das <b>premissas</b>. 2) Identifique as linhas onde <b>TODAS</b> as premissas são V. 3) Nessas linhas, cheque a <b>conclusão</b>. 4) Se em alguma linha com premissas V a conclusão for <b>F</b> → argumento <b>INVÁLIDO</b>. Se em todas for V → <b>VÁLIDO</b>. <span class="peg">Pegadinha:</span> 2 premissas V + 1 premissa F = linha inteira desconsiderada.'},
+  {n:2,  d:'2026-08-16', t:'Argumentos Métodos T.V. — mais 15q + tipos (dedutivo/indutivo)',
+   meta:15, peso:'fixar o método',
+   dica:'<b>5 tipos que caem:</b> <b>(1)</b> Válido dedutivo (conclusão V em todas as linhas com premissas V) · <b>(2)</b> Inválido (uma linha furta) · <b>(3)</b> Indutivo (conclusão V em algumas, F em outras) · <b>(4)</b> Falacioso (conclusão F em linha com premissas V) · <b>(5)</b> Tautológico/contraditório. CEBRASPE adora confundir <b>válido</b> com <b>verdadeiro</b>: argumento válido pode ter conclusão F, basta ser logicamente derivado.'},
+  {n:3,  d:'2026-08-20', t:'Equivalências Lógicas — 20q (negação, De Morgan)',
+   meta:20, peso:'MAIS COBRADO (22,7%)',
+   dica:'<b>Tabela-chave de equivalências (decorar):</b><br><code>p→q ≡ ~p∨q ≡ ~q→~p</code> (contrapositiva) <br><code>p↔q ≡ (p→q)∧(q→p)</code> <br><code>p∨q ≡ ~p→q ≡ ~q→p</code> <br><code>p∧q ≡ ~(~p∨~q)</code> <br><span class="peg">Pegadinha #1:</span> ~(p→q) ≡ <code>p∧~q</code> (NÃO é ~p→~q!).<br><span class="peg">Pegadinha #2:</span> "negar" NÃO é "inverter". Negar é trocar V↔F e manter a estrutura.'},
+  {n:4,  d:'2026-08-23', t:'Equivalências Lógicas — 15q (contrapositiva, bicondicional)',
+   meta:15, peso:'aprofundar',
+   dica:'<b>Equivalência-material vs Lógica:</b> <code>p→q</code> e <code>q→p</code> NÃO são equivalentes (apenas a contrapositiva é).<br><code>p∨q</code> e <code>p∧q</code> NÃO são equivalentes.<br><code>p↔q</code> e <code>p→q</code> NÃO são equivalentes (o ↔ exige ida e volta).<br>CEBRASPE: "se P, então Q" ≡ "P somente se Q" (atenção à ordem!).'},
+  {n:5,  d:'2026-08-27', t:'Tabela Verdade — 20q (volume, você já acerta 88%)',
+   meta:20, peso:'manutenção',
+   dica:'<b>Foco:</b> conectivos <b>bicondicional (↔)</b> e <b>ou-exclusivo (⊻)</b>.<br><b>↔</b> = V quando os dois têm o <b>mesmo</b> valor (VV ou FF).<br><b>⊻</b> = V quando os dois têm <b>valores diferentes</b> (V⊻F = V; V⊻V = F).<br>Para p∧q∧r∧s com 4 proposições = 16 linhas. Monte por blocos: faça (p∧q) e (r∧s) separados e depois una.'},
+  {n:6,  d:'2026-08-30', t:'Falácias — teoria + 15q (item 5 do edital)',
+   meta:15, peso:'item explícito do edital',
+   dica:'<b>5 falácias que CEBRASPE mais cobra (decorar):</b><br><b>(1)</b> <i>Afirmação do consequente</i>: p→q; q; logo p. INVÁLIDO.<br><b>(2)</b> <i>Negação do antecedente</i>: p→q; ~p; logo ~q. INVÁLIDO.<br><b>(3)</b> <i>Generalização apressada</i>: de 1-2 casos → todos. INVÁLIDO.<br><b>(4)</b> <i>Apelo à autoridade</i>: alguém famoso disse → é verdade. INVÁLIDO.<br><b>(5)</b> <i>Ad hominem</i>: ataca a pessoa, não o argumento. INVÁLIDO.'},
+  {n:7,  d:'2026-09-03', t:'Argumentos + Equivalências (misto) — 20q',
+   meta:20, peso:'revisão cruzada',
+   dica:'<b>Estratégia da sessão mista:</b> alterne 5q de cada subtema (argumentos → equivalências → argumentos → equivalências) para fixar a troca de chip. Marque as 5 que errar e refaça na sessão 10 (sequências+falácias flash).'},
+  {n:8,  d:'2026-09-06', t:'Associação de Informações (verdade/mentira) — método + 10q',
+   meta:10, peso:'tema com peso médio (7,4%)',
+   dica:'<b>Método CEBRASPE:</b> 1) Construa uma <b>tabela de dupla entrada</b> (pessoa × atributo). 2) Comece pela <b>informação mais restritiva</b> (a que tem menos possibilidades). 3) Vá eliminando por contradição. 4) Confirme cada célula antes de passar à próxima.<br>Atalho: se o problema diz "3 dizem V e 2 dizem F" → monte a matriz V/F e vá testando.'},
+  {n:9,  d:'2026-09-10', t:'Diagramas / Categóricas — 12q (manutenção)',
+   meta:12, peso:'já acerta 84% (bom)',
+   dica:'<b>Silogismos categóricos:</b> Todo A é B · Nenhum A é B · Algum A é B · Algum A não é B.<br>Decore as 4 figuras e os 19 modos válidos.<br>Diagramas de Euler-Venn: represente as premissas como subconjuntos e veja se a conclusão cabe. <span class="peg">Pegadinha:</span> "Todo A é B" NÃO garante que existe A (vacuidade).'},
+  {n:10, d:'2026-09-13', t:'Sequências (8q) + Falácias flash (8q)',
+   meta:16, peso:'manutenção',
+   dica:'<b>Sequências:</b> peso baixo (1,8%) mas é fácil pontuar. Identifique o padrão: PA, PG, alternada, par/ímpar, soma de anteriores (Fibonacci-like).<br><b>Falácias flash:</b> 8q rápidas das 5 decoradas (sessão 6) — só reconhecimento.'},
+  {n:11, d:'2026-09-17', t:'Simulado geral cronometrado — 20q mistas, 2 min/q',
+   meta:20, peso:'simulado final pré-prova',
+   dica:'<b>Regra do simulado:</b> 40 min totais · 2 min/q. Não trave em uma questão: pule e volte. Marque as que chutou para revisar depois. Compare com seu desempenho inicial (Sess 1) — meta: ≥75% de acerto.'},
+];
+
+const SESSOES_EST = [
+  {n:1, d:'2026-08-19', t:'Média aritmética + Média ponderada',
+   meta:10, peso:'definição + cálculo simples',
+   formula:'<b>Média simples:</b> x̄ = (x₁ + x₂ + ... + xₙ) / n<br><b>Média ponderada:</b> x̄ = Σ(xᵢ·pᵢ) / Σpᵢ',
+   dica:'<b>Fórmula:</b> <code>x̄ = Σxᵢ / n</code>. Cálculo mental: some os dados e divida pela quantidade.<br><b>CEBRASPE troca nomes:</b> leia "média" e veja se o enunciado não está pedindo mediana.<br><b>Propriedade #1:</b> soma dos desvios em relação à média = <b>0</b>.<br><b>Propriedade #2:</b> se somar constante k a todos → média soma k, <b>DP não muda</b>.<br><b>Propriedade #3:</b> se multiplicar por k → média multiplica por k, <b>DP multiplica por |k|</b>.'},
+  {n:2, d:'2026-08-26', t:'Mediana + Moda',
+   meta:10, peso:'definição + identificação',
+   formula:'<b>Mediana:</b> valor central dos dados ORDENADOS<br>· n ímpar = valor da posição (n+1)/2<br>· n par = média dos 2 valores centrais<br><b>Moda:</b> valor que mais se repete',
+   dica:'<b>Mediana:</b> <code>ordene os dados</code> e pegue o do meio. Com 5 dados {1,3,5,7,9} → mediana = 5 (posição 3). Com 4 dados {1,3,5,7} → mediana = (3+5)/2 = 4.<br><span class="peg">Pegadinha clássica:</span> "A mediana não é afetada por valores extremos" → <b>CERTO</b> (a média, sim).<br><b>Moda:</b> pode ser amodal (nenhuma), unimodal, bimodal. Em dados agrupados → classe modal.'},
+  {n:3, d:'2026-09-02', t:'Desvio-padrão e Variância',
+   meta:8, peso:'conceitual + cálculo com 3-5 dados',
+   formula:'<b>Variância:</b> σ² = Σ(xᵢ − x̄)² / n<br><b>Desvio-padrão:</b> σ = √σ²',
+   dica:'<b>DP = √variância.</b> Mede o quanto os dados se afastam da média, na MESMA unidade dos dados.<br><b>CEBRASPE conceitual:</b> "DP é raiz quadrada da variância" — CERTO.<br><b>Cálculo rápido (3-5 dados):</b> calcule a média, subtraia de cada dado, eleve ao quadrado, some, divida por n, tire a raiz.<br><b>Não cairá:</b> inferência, teste de hipóteses, regressão, ANOVA. Apenas assertiva conceitual ou cálculo direto.'},
+];
+
+const DIAG_TEC = [
+  ['Argumentos (Métodos T.V.)', 25, 57, 'pior'],
+  ['Equivalências Lógicas',     7,  72, 'pouca prática'],
+  ['Falácias',                  9,  67, ''],
+  ['Condição Necessária/Suficiente', 7, 72, ''],
+  ['Operadores Lógicos',        10, 80, 'bom'],
+  ['Tabela Verdade',            8,  88, 'bom'],
+  ['Diagramas/Categóricas',     12, 84, 'bom'],
+  ['Sequências',                5,  40, 'ruim (peso baixo)'],
+  ['Tautologia',                2,  100,'ótimo'],
+  ['Raciocínio Crítico',        3,  100,'ótimo'],
+];
+
+const DIAG_PESO = [
+  ['Equivalências Lógicas',   453, 22.7, true],
+  ['Tabela Verdade',          380, 19.0, true],
+  ['Argumentos Métodos T.V.', 344, 17.2, true],
+  ['Operadores Lógicos',      170, 8.5,  false],
+  ['Associação Informações',  148, 7.4,  false],
+  ['Diagramas/Categóricas',   127, 6.4,  false],
+  ['Tautologia/Contradição',  80,  4.0,  false],
+  ['Raciocínio Crítico',      53,  2.7,  false],
+  ['Proposições (definição)', 52,  2.6,  false],
+  ['Falácias',                42,  2.1,  false],
+  ['Sequências',              36,  1.8,  false],
+];
+
+/* ====================== ESTADO ====================== */
+const KEY='planner_rlm_estat_v1';
+let state = (()=>{ try{ return JSON.parse(localStorage.getItem(KEY)) || {m:{}, fin:{}, erros:{}} }catch(e){ return {m:{}, fin:{}, erros:{}} } })();
+if(!state.m) state.m={};
+if(!state.fin) state.fin={};
+if(!state.erros) state.erros={};
+function salvar(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function feito(id){ return !!state.m[id]; }
+
+function dataISO(s){ const p=s.split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); }
+function curto(dt){ return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
+function longo(dt){ return dt.toLocaleDateString('pt-BR',{weekday:'long', day:'2-digit', month:'long'}); }
+function diasAte(){ return Math.ceil((PROVA-REAL)/86400000); }
+
+/* ====================== RENDER ====================== */
+function renderStats(){
+  const rlmFeitas = SESSOES_RLM.filter(s=>feito('rlm-'+s.n)).length;
+  const estFeitas = SESSOES_EST.filter(s=>feito('est-'+s.n)).length;
+  const totalQ = SESSOES_RLM.reduce((s,x)=>s+x.meta,0) + SESSOES_EST.reduce((s,x)=>s+x.meta,0);
+  const qFeitas = SESSOES_RLM.filter(s=>feito('rlm-'+s.n)).reduce((s,x)=>s+x.meta,0)
+                 + SESSOES_EST.filter(s=>feito('est-'+s.n)).reduce((s,x)=>s+x.meta,0);
+  const dias = diasAte();
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="v">${dias}</div><div class="l">Dias até a prova</div></div>
+    <div class="stat rlm"><div class="v">${rlmFeitas}/${SESSOES_RLM.length}</div><div class="l">Sessões RLM feitas</div><div class="bar"><i class="rlm" style="width:${rlmFeitas/SESSOES_RLM.length*100}%"></i></div></div>
+    <div class="stat est"><div class="v">${estFeitas}/${SESSOES_EST.length}</div><div class="l">Sessões Estatística</div><div class="bar"><i class="est" style="width:${estFeitas/SESSOES_EST.length*100}%"></i></div></div>
+    <div class="stat gold"><div class="v">${qFeitas}/${totalQ}</div><div class="l">Questões feitas</div><div class="bar"><i style="width:${qFeitas/totalQ*100}%"></i></div></div>
+    <div class="stat ok"><div class="v">75%+</div><div class="l">Meta acerto final</div></div>
+  `;
+  document.getElementById('nRlm').textContent = rlmFeitas+'/'+SESSOES_RLM.length;
+  document.getElementById('nEst').textContent = estFeitas+'/'+SESSOES_EST.length;
+}
+
+function renderCronograma(){
+  const todos = [];
+  SESSOES_RLM.forEach(s=>todos.push({...s, _tipo:'RLM', _id:'rlm-'+s.n}));
+  SESSOES_EST.forEach(s=>todos.push({...s, _tipo:'EST', _id:'est-'+s.n}));
+  todos.sort((a,b)=>dataISO(a.d)-dataISO(b.d));
+
+  const hojeMs = new Date(REAL.getFullYear(),REAL.getMonth(),REAL.getDate()).getTime();
+  const html = todos.map(s=>{
+    const dt = dataISO(s.d);
+    const dtMs = dt.getTime();
+    const isHoje = (dtMs===hojeMs);
+    const isPast = (dtMs<hojeMs);
+    const done = feito(s._id);
+    const cls = ['lin', s._tipo.toLowerCase()];
+    if(isHoje) cls.push('hoje');
+    return `<div class="${cls.join(' ')}">
+      <div class="dt">${longo(dt)}${isHoje?' · HOJE':''}${isPast && !done?' · ATRASADO':''}${done?' · CONCLUÍDO':''}</div>
+      <div class="cn"><b>${s._tipo} ${s.n}</b> — ${s.t} <small>· ${s.meta}q · ${s.peso}</small></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('cronSub').textContent = '11 ago → 20 set · '+todos.length+' sessões';
+  document.getElementById('cron').innerHTML = html;
+}
+
+function renderRlm(){
+  document.getElementById('listaRlm').innerHTML = SESSOES_RLM.map(s=>{
+    const done = feito('rlm-'+s.n);
+    return `<div class="ses ${done?'done':''}">
+      <div class="top">
+        <h3><span class="sessao">RLM ${s.n}</span> ${s.t}</h3>
+        <button class="chk ${done?'on':''}" onclick="toggle('rlm-${s.n}')">✓</button>
+      </div>
+      <div class="meta-row">
+        <span><b>Data:</b> ${curto(dataISO(s.d))} (${longo(dataISO(s.d)).split(',')[0]})</span>
+        <span><b>Meta:</b> ${s.meta} questões</span>
+        <span><b>Status:</b> ${s.peso}</span>
+      </div>
+      <div class="dica">${s.dica}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderEst(){
+  document.getElementById('listaEst').innerHTML = SESSOES_EST.map(s=>{
+    const done = feito('est-'+s.n);
+    return `<div class="ses est ${done?'done':''}">
+      <div class="top">
+        <h3><span class="sessao est">EST ${s.n}</span> ${s.t}</h3>
+        <button class="chk ${done?'on':''}" onclick="toggle('est-${s.n}')">✓</button>
+      </div>
+      <div class="meta-row">
+        <span><b>Data:</b> ${curto(dataISO(s.d))} (${longo(dataISO(s.d)).split(',')[0]})</span>
+        <span><b>Meta:</b> ${s.meta} questões</span>
+        <span><b>Status:</b> ${s.peso}</span>
+      </div>
+      <div class="form">${s.formula}</div>
+      <div class="dica">${s.dica}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderDiag(){
+  document.getElementById('diagTec').innerHTML = DIAG_TEC.map(([t,q,a,obs])=>{
+    const cls = a>=80?'color:var(--ok);font-weight:700' : a<65?'color:var(--late);font-weight:700' : '';
+    return `<tr><td>${t}${obs?` <small style="color:var(--ink-3)">(${obs})</small>`:''}</td><td class="ac">${q}</td><td class="ac" style="${cls}">${a}%</td></tr>`;
+  }).join('');
+  document.getElementById('diagPeso').innerHTML = DIAG_PESO.map(([t,q,p,hot])=>{
+    const w = Math.min(100, p*3);
+    return `<tr><td>${t}</td><td class="ac">${q}</td><td class="pct ${hot?'hot':''}"><span class="pct-bar" style="width:${w}px"></span>${p}%</td></tr>`;
+  }).join('');
+}
+
+/* ====================== AÇÕES ====================== */
+function toggle(id){
+  state.m[id] = !state.m[id];
+  if(!state.m[id]) delete state.m[id];
+  salvar(); renderAll();
+}
+
+function exportar(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'planner_rlm_estat_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function importar(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e=>{
+    try{ state = JSON.parse(e.target.result); salvar(); renderAll(); alert('Backup restaurado com sucesso.'); }
+    catch(err){ alert('Arquivo inválido: '+err.message); }
+  };
+  r.readAsText(f);
+}
+function zerar(){
+  if(!confirm('Zerar todas as marcações? (não afeta o backup)')) return;
+  state = {m:{}, fin:{}, erros:{}}; salvar(); renderAll();
+}
+
+function renderAll(){
+  renderStats();
+  renderCronograma();
+  renderRlm();
+  renderEst();
+  renderDiag();
+}
+
+/* ====================== TABS ====================== */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('p-'+t.dataset.p).classList.add('on');
+}));
+
+renderAll();
+</script>
+</body>
+</html>
