@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planner v3 — Resoluções CONTRAN + CTB | DETRAN/AL 2026</title>
+<style>
+  :root{
+    --navy:#0f2350; --navy-2:#1b3a72; --gold:#c9962f; --gold-soft:#f6e9c8;
+    --bg:#f4f6fa; --card:#ffffff; --ink:#141a29; --ink-2:#4b5568; --ink-3:#8b93a5;
+    --line:#e3e7f0;
+    --L:#2563eb; --R1:#0d9488; --R2:#7c3aed; --R3:#15803d; --late:#c02626;
+    --CF:#ea580c; --CF-soft:#ffedd5;     /* CTB flash - laranja queimado */
+    --p3:#b91c1c; --p2:#c2410c; --p1:#a16207; --p0:#15803d;
+    --sh:0 1px 2px rgba(16,28,60,.06), 0 2px 8px rgba(16,28,60,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Inter,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  a{color:var(--navy-2)}
+  header{background:linear-gradient(120deg,#0b1b3d 0%,#1b3a72 100%);color:#fff;padding:20px 28px;border-bottom:3px solid var(--gold)}
+  header h1{font-size:20px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  header h1 .tag{background:var(--gold);color:#22180a;font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.4px}
+  header h1 .badge{background:#dc2626;color:#fff;font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:800;letter-spacing:.5px}
+  header p{font-size:12.5px;opacity:.85;margin-top:4px}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 24px 60px}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+  .stat{background:var(--card);border-radius:10px;padding:13px 16px;box-shadow:var(--sh);border-left:4px solid var(--navy-2)}
+  .stat .v{font-size:22px;font-weight:700;line-height:1.1}
+  .stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-2);font-weight:700;margin-top:3px}
+  .stat.gold{border-left-color:var(--gold)}
+  .stat.late{border-left-color:var(--late)}
+  .stat.ok{border-left-color:var(--R3)}
+  .stat.ctb{border-left-color:var(--CF)}
+
+  .bar{height:9px;border-radius:6px;background:#e7ebf3;overflow:hidden;margin-top:7px}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--navy-2),var(--gold))}
+
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;background:var(--card);padding:5px;border-radius:10px;box-shadow:var(--sh)}
+  .tab{border:0;background:transparent;font:inherit;font-weight:600;font-size:13px;color:var(--ink-2);padding:9px 15px;border-radius:7px;cursor:pointer}
+  .tab:hover{background:#eef1f7}
+  .tab.on{background:var(--navy);color:#fff}
+  .tab .n{background:rgba(255,255,255,.22);border-radius:8px;padding:0 6px;margin-left:5px;font-size:11px}
+  .tab:not(.on) .n{background:#e7ebf3;color:var(--ink-2)}
+  .pane{display:none} .pane.on{display:block}
+
+  .panel{background:var(--card);border-radius:12px;box-shadow:var(--sh);padding:18px;margin-bottom:16px}
+  .panel > h2{font-size:15px;font-weight:700;padding-bottom:10px;margin-bottom:14px;border-bottom:2px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .panel > h2 small{font-weight:600;font-size:11.5px;color:var(--ink-3)}
+  .cols{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+  @media(max-width:980px){.cols{grid-template-columns:1fr}}
+
+  /* atividade */
+  .ativ{border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:12px;border-left:5px solid var(--L)}
+  .ativ.R{border-left-color:var(--R1)}
+  .ativ.F{border-left-color:var(--gold)}
+  .ativ.CF{border-left-color:var(--CF);background:linear-gradient(0deg,var(--CF-soft) 0%,#fff 60%)}
+  .ativ.done{background:#f6faf7;border-left-color:var(--R3)}
+  .ativ h3{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:3px}
+  .ativ .sub{font-size:11.5px;color:var(--ink-3);margin-bottom:9px}
+  .slotnum{background:var(--navy);color:#fff;font-size:10px;font-weight:700;border-radius:5px;padding:2px 7px;letter-spacing:.5px}
+  .slotnum.ctb{background:var(--CF)}
+
+  .item{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px dashed var(--line)}
+  .item:first-of-type{border-top:0}
+  .item .nm{flex:1;font-size:12.5px}
+  .item .nm b{font-weight:700}
+  .item .nm span{color:var(--ink-3)}
+  .chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);background:#fff;cursor:pointer;font-size:12px;line-height:1;color:transparent;flex:none}
+  .chk.on{background:var(--R3);border-color:var(--R3);color:#fff}
+
+  .est{font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:20px;color:#fff;flex:none}
+  .est.L{background:var(--L)} .est.R1{background:var(--R1)} .est.R2{background:var(--R2)} .est.R3{background:var(--R3)} .est.F{background:var(--gold);color:#22180a} .est.CF{background:var(--CF)}
+
+  /* calendário */
+  .calhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .calhead .t{font-weight:700;font-size:14px;flex:1;text-transform:capitalize}
+  .btn{border:1px solid var(--line);background:#fff;font:inherit;font-size:12px;font-weight:600;color:var(--ink-2);padding:6px 11px;border-radius:7px;cursor:pointer}
+  .btn:hover{background:#eef1f7;color:var(--ink)}
+  .btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+  .btn.pri:hover{background:var(--navy-2);color:#fff}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal .dn{text-align:center;font-size:10px;font-weight:700;color:var(--ink-3);text-transform:uppercase;padding:4px 0}
+  .cel{background:#fff;border:1px solid var(--line);border-radius:7px;min-height:72px;padding:5px;cursor:pointer;overflow:hidden}
+  .cel:hover{border-color:var(--navy-2)}
+  .cel.out{background:#fafbfd;opacity:.45;cursor:default}
+  .cel.hoje{border:2px solid var(--gold);box-shadow:0 0 0 3px rgba(201,150,47,.15)}
+  .cel.atraso{background:#fff3f3;border-color:#f0b4b4}
+  .cel.ok{background:#f4faf6}
+  .cel.prova{background:#fff8ea;border-color:var(--gold)}
+  .cel .d{font-size:12px;font-weight:700;margin-bottom:3px}
+  .cel .mini{font-size:9.5px;line-height:1.35;border-radius:4px;padding:1px 4px;margin-bottom:2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mini.L{background:var(--L)} .mini.R1{background:var(--R1)} .mini.R2{background:var(--R2)} .mini.R3{background:var(--R3)} .mini.F{background:var(--gold);color:#22180a} .mini.CF{background:var(--CF)} .ativ.IF{border-left-color:#be123c} .mini.IF{background:#be123c;color:#fff}
+  .mini.feito{opacity:.35;text-decoration:line-through}
+
+  /* resoluções */
+  .rcard{border:1px solid var(--line);border-radius:10px;padding:13px 14px;margin-bottom:11px}
+  .rtop{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+  .rtop .nm{flex:1;min-width:220px}
+  .rtop .nm b{font-size:13.5px}
+  .rtop .nm p{font-size:11.5px;color:var(--ink-2);margin-top:2px}
+  .prio{font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .prio.p3{background:#fee2e2;color:var(--p3)} .prio.p2{background:#ffedd5;color:var(--p2)}
+  .prio.p1{background:#fef3c7;color:var(--p1)} .prio.p0{background:#dcfce7;color:var(--p0)}
+  .trilha{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+  .bloco{border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:118px}
+  .bloco .bl{font-size:11px;font-weight:700;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+  .bloco .bl i{font-style:normal;font-size:9.5px;color:var(--ink-3);font-weight:600}
+  .steps{display:flex;gap:3px}
+  .step{width:26px;height:20px;border-radius:5px;border:1px solid var(--line);background:#fff;font-size:9px;font-weight:800;color:var(--ink-3);cursor:pointer;padding:0;line-height:1}
+  .step:hover{border-color:var(--navy-2)}
+  .step.on.L{background:var(--L);border-color:var(--L);color:#fff}
+  .step.on.R1{background:var(--R1);border-color:var(--R1);color:#fff}
+  .step.on.R2{background:var(--R2);border-color:var(--R2);color:#fff}
+  .step.on.R3{background:var(--R3);border-color:var(--R3);color:#fff}
+  .step.opt{border-style:dashed}
+
+  /* CTB cards (listaCTB) */
+  .ctbcard{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;border-left:5px solid var(--CF);background:#fffbf5}
+  .ctbcard .top{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+  .ctbcard .nm{flex:1;min-width:200px}
+  .ctbcard .nm b{font-size:13px}
+  .ctbcard .nm p{font-size:11.5px;color:var(--ink-2);margin-top:2px}
+  .ctbcard .meta{font-size:11px;color:var(--ink-3);margin-top:5px}
+  .ctbcard .pill{font-size:10px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:20px;background:var(--CF-soft);color:var(--CF);white-space:nowrap}
+  .ctbcard .actions{margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+  /* cronograma */
+  .lin{border-left:2px solid var(--line);padding:0 0 14px 16px;margin-left:6px;position:relative}
+  .lin:before{content:"";position:absolute;left:-6px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--navy-2)}
+  .lin.hoje:before{background:var(--gold)}
+  .lin .dt{font-size:11px;font-weight:700;color:var(--ink-2);text-transform:capitalize}
+  .lin .cn{font-size:12.5px;margin-top:2px}
+
+  .aviso{background:var(--gold-soft);border-left:4px solid var(--gold);border-radius:8px;padding:11px 13px;font-size:12.5px;margin-bottom:14px}
+  .aviso b{color:#6b4d0c}
+  .aviso.ctb{background:var(--CF-soft);border-left-color:var(--CF)}
+  .aviso.ctb b{color:#7c2d12}
+  .vazio{color:var(--ink-3);font-size:12.5px;padding:14px 0;text-align:center}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--ink-2);align-items:center}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px;vertical-align:-1px}
+  footer{text-align:center;font-size:11px;color:var(--ink-3);padding:18px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Planner v3 — Resoluções CONTRAN + CTB <span class="tag">DETRAN/AL 2026</span> <span class="badge">RETA FINAL 40 DIAS</span></h1>
+  <p>19 resoluções CONTRAN + 23 blocos CTB · 2 atividades/dia (~60 min) + flash CTB na reta final · início 11/08 · 1.020 a partir do art. 62 · 723 inteira já lida</p>
+</header>
+
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs">
+    <button class="tab on" data-p="hoje">Hoje</button>
+    <button class="tab" data-p="cal">Calendário</button>
+    <button class="tab" data-p="res">Resoluções e blocos</button>
+    <button class="tab" data-p="cron">Cronograma completo</button>
+  </div>
+
+  <!-- HOJE -->
+  <div class="pane on" id="p-hoje">
+    <div class="cols">
+      <div>
+        <div class="panel">
+          <h2>Plano de hoje <small id="hojeData"></small></h2>
+          <div id="hojeAtivs"></div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <h2>Pendências atrasadas <small>marque aqui para tirar do vermelho</small></h2>
+          <div id="atrasados"></div>
+        </div>
+        <div class="panel">
+          <h2>Como usar</h2>
+          <p style="font-size:12.5px;color:var(--ink-2)">
+            Cada dia traz <b>duas atividades principais de ~60 min</b>: em regra uma de <b>leitura nova</b> e outra de <b>revisão</b>.
+            Na <b>reta final (06/set a 19/set)</b>, entra também um <b style="color:var(--CF)">flash CTB</b> curto (laranja) com blocos já estudados — reconhecimento rápido (~30 min).
+            Marque o quadradinho ao concluir — o bloco avança de estágio sozinho na aba <b>Resoluções e blocos</b>.
+            Dias passados com item não marcado ficam <b style="color:var(--late)">vermelhos</b> no calendário.
+          </p>
+          <div class="legend" style="margin-top:12px">
+            <span><i class="dot" style="background:var(--L)"></i>Leitura</span>
+            <span><i class="dot" style="background:var(--R1)"></i>R1 (+1 dia)</span>
+            <span><i class="dot" style="background:var(--R2)"></i>R2 (+7 dias)</span>
+            <span><i class="dot" style="background:var(--R3)"></i>R3 (+14 dias)</span>
+            <span><i class="dot" style="background:var(--gold)"></i>Flash CONTRAN</span>
+            <span><i class="dot" style="background:var(--CF)"></i>Flash CTB</span>
+            <span><i class="dot" style="background:#be123c"></i>Infrações (IF)</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn" onclick="exportar()">Salvar backup do progresso</button>
+            <button class="btn" onclick="document.getElementById('imp').click()">Restaurar backup</button>
+            <input type="file" id="imp" accept="application/json" style="display:none" onchange="importar(this)">
+            <button class="btn" onclick="zerar()">Zerar marcações</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDÁRIO -->
+  <div class="pane" id="p-cal">
+    <div class="cols">
+      <div class="panel">
+        <div class="calhead">
+          <button class="btn" onclick="mudaMes(-1)">‹</button>
+          <div class="t" id="calT"></div>
+          <button class="btn" onclick="irHoje()">Hoje</button>
+          <button class="btn" onclick="mudaMes(1)">›</button>
+        </div>
+        <div class="cal" id="cal"></div>
+      </div>
+      <div class="panel">
+        <h2>Detalhe do dia <small>clique em um dia no calendário</small></h2>
+        <div id="detalhe"><div class="vazio">Nenhum dia selecionado.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESOLUÇÕES -->
+  <div class="pane" id="p-res">
+    <div class="aviso" id="avisoRes"></div>
+    <div class="panel">
+      <h2>Resoluções por prioridade <small>clique em L / R1 / R2 / R3 para marcar cada bloco</small></h2>
+      <div id="listaRes"></div>
+    </div>
+    <div class="panel">
+      <h2>CTB — Blocos de revisão <small>flash de consolidação para a reta final</small></h2>
+      <div class="aviso ctb" id="avisoCTB"></div>
+      <div id="listaCTB"></div>
+    </div>
+  </div>
+
+  <!-- CRONOGRAMA -->
+  <div class="pane" id="p-cron">
+    <div class="panel">
+      <h2>Cronograma dia a dia até a prova <small id="cronSub"></small></h2>
+      <div id="cron"></div>
+    </div>
+  </div>
+
+  <footer>Dados salvos apenas neste navegador (localStorage). Faça o backup antes de limpar o histórico.</footer>
+</div>
+
+<script>
+/* ====================== PARÂMETROS ====================== */
+const INICIO = new Date(2026,7,11);          // 11/08/2026 — D+0
+const PROVA  = new Date(2026,8,20);          // 20/09/2026 — dia da prova (D+40)
+const DIAS   = 40;                            // janela total do plano
+const ULT_LEITURA = 34;                       // último dia com leitura nova (~14/09)
+const FLASH_INI   = 35;                       // 15/09 em diante: só revisão e flash de véspera
+const CTB_FLASH_INI = 26;                     // 06/09/2026 (D+26) — janela de flash CTB
+const CTB_FLASH_FIM = 39;                     // 19/09/2026 (D+39) — último dia com flash CTB
+const MIN_ART = {L:3.5, R1:1.5, R2:1.0, R3:0.6, F:0.45, CF:0.45}; // min por artigo por estágio (CTB flash = 0.45)
+const GAP     = {L:1, R1:7, R2:14};                // curva 1–7–14
+const ALVO    = {3:['L','R1','R2','R3'], 2:['L','R1','R2'], 1:['L','R1'], 0:['L']};
+const ORC     = 60;                           // orçamento de cada atividade principal, em minutos
+
+/* ====================== RESOLUÇÕES (19 vigentes) ======================
+   ok:true  -> nº de artigos conferido no texto oficial
+   ok:false -> conferir (≈ aproximado)
+   pre:[...] -> índices dos blocos já lidos antes do plano começar   */
+const RESOL = [
+  // CRÍTICAS
+  {id:'r1020', n:'Res. CONTRAN 1.020/2025', t:'Habilitação, expedição de documentos de condutores (revogou 789/2020)', prio:3, arts:142, ok:true,
+   blocos:[[1,19],[20,40],[41,61],[62,80],[81,101],[102,120],[121,142]], pre:[0,1,2]},
+  {id:'r723',  n:'Res. CONTRAN 723/2018',   t:'Suspensão e cassação do direito de dirigir + formulário Renach/PPD/ACC (11% das provas)', prio:3, arts:48,  ok:true,
+   blocos:[[1,16],[17,32],[33,48]], pre:[0,1,2]},
+  {id:'r809',  n:'Res. CONTRAN 809/2020',   t:'Requisitos para emissão do CRV, CLA, CRLV-e e comprovante de transferência', prio:3, arts:25, ok:false},
+  {id:'r882',  n:'Res. CONTRAN 882/2021',   t:'Limites de peso e dimensões para veículos em vias terrestres (11% das provas DETRAN)', prio:3, arts:40, ok:false},
+
+  // ALTAS
+  {id:'r30',   n:'Res. CONTRAN 30/1998',    t:'Condutores profissionais e cursos especializados', prio:2, arts:42, ok:false},
+  {id:'r108',  n:'Res. CONTRAN 108/1999',   t:'Responsabilidade pelo pagamento de multas (proprietário × condutor infrator)', prio:2, arts:8,  ok:false},
+  {id:'r623',  n:'Res. CONTRAN 623/2016',   t:'Remoção, custódia e leilão de veículos removidos/recolhidos', prio:2, arts:48, ok:false},
+  {id:'r807',  n:'Res. CONTRAN 807/2020',   t:'Registro de contratos de financiamento (gravame) no CRV/CLA via RENAVAM', prio:2, arts:20, ok:false},
+  {id:'r886',  n:'Res. CONTRAN 886/2021',   t:'Registro de veículos automotores', prio:2, arts:30, ok:false},
+  {id:'r926',  n:'Res. CONTRAN 926/2022',   t:'Procedimentos admin. p/ autuação e notificação (infrações sem veículo)', prio:2, arts:30, ok:false},
+  {id:'r932',  n:'Res. CONTRAN 932/2022',   t:'Exame toxicológico para motoristas profissionais (categ. C, D e E)', prio:2, arts:20, ok:false},
+  {id:'r941',  n:'Res. CONTRAN 941/2022',   t:'Vistoria de identificação veicular (revogou 466/2013 e 781/2020)', prio:2, arts:50, ok:false},
+  {id:'r969',  n:'Res. CONTRAN 969/2022',   t:'Sistema de Placas de Identificação de Veículos (PIV)', prio:2, arts:60, ok:false},
+  {id:'r1013', n:'Res. CONTRAN 1.013/2024', t:'Registro eletrônico de veículos', prio:2, arts:20, ok:false},
+  {id:'r1017', n:'Res. CONTRAN 1.017/2024', t:'CRLV-e e procedimentos para licenciamento anual', prio:2, arts:20, ok:false},
+  {id:'r300',  n:'Res. CONTRAN 300/2008',   t:'Procedimentos admin. de exames pós-condenação por crime de trânsito (11% das provas!)', prio:2, arts:20, ok:false},
+
+  // MÉDIAS
+  {id:'r110',  n:'Res. CONTRAN 110/2000',   t:'Calendário de renovação do licenciamento anual de veículos', prio:1, arts:6,  ok:false},
+  {id:'r897',  n:'Res. CONTRAN 897/2022',   t:'Programa RODOVIDA (fiscalização motoristas profissionais)', prio:1, arts:10, ok:false},
+
+  // BAIXA
+  {id:'r351',  n:'Res. CONTRAN 351/2010',   t:'Mensagens educativas de trânsito em peças publicitárias', prio:0, arts:8,  ok:false}
+];
+
+/* ====================== CTB — BLOCOS DE REVISÃO ======================
+   Cada bloco já foi revisado múltiplas vezes. Agora entram como Flash de consolidação.
+   lastRev = data da última revisão, revs = nº de revisões já feitas   */
+const CTB_BLOCOS = [
+  {id:'ctb_1_6',     n:'CTB arts. 1–6',            t:'Disposições preliminares',                       arts:6,  lastRev:'2025-11-16', revs:5},
+  {id:'ctb_5_10',    n:'CTB arts. 5–10',           t:'Sistema Nacional de Trânsito (29% das provas!)',   arts:6,  lastRev:'2025-11-19', revs:5, hot:true},
+  {id:'ctb_12_24',   n:'CTB arts. 12–17, 20, 23, 24', t:'Competências (União, Estados, Municípios, CONTRAN) — 29% das provas!', arts:9, lastRev:'2026-01-16', revs:6, hot:true},
+  {id:'ctb_26_32',   n:'CTB arts. 26–32',          t:'Educação para o trânsito e sinalização (22% das provas)',         arts:7,  lastRev:'2026-01-14', revs:3, hot:true},
+  {id:'ctb_33_50',   n:'CTB arts. 33–50',          t:'Engenharia de tráfego, operação e fiscalização (22% das provas)', arts:18, lastRev:'2026-07-03', revs:4, hot:true},
+  {id:'ctb_51_67',   n:'CTB arts. 51–67',          t:'Cidadãos, educação, condução de veículos',       arts:17, lastRev:'2026-07-23', revs:2, proper:true,  properDue:7},
+  {id:'ctb_67a_71',  n:'CTB arts. 67-A–71',        t:'Motoristas profissionais',                       arts:5,  lastRev:'2025-10-11', revs:6},
+  {id:'ctb_72_79',   n:'CTB arts. 72–79',          t:'Pedestres e condutores não motorizados',         arts:8,  lastRev:'2026-03-21', revs:3},
+  {id:'ctb_80_90',   n:'CTB arts. 80–90',          t:'Sinalização de trânsito',                        arts:11, lastRev:'2026-06-23', revs:2, proper:true,  properDue:3},
+  {id:'ctb_91_113',  n:'CTB arts. 91–113',         t:'Engenharia de tráfego + veículos + segurança',   arts:23, lastRev:'2025-10-28', revs:7},
+  {id:'ctb_114_119', n:'CTB arts. 114–119',        t:'Identificação do veículo',                       arts:6,  lastRev:'2025-12-05', revs:6},
+  {id:'ctb_120_129b',n:'CTB arts. 120–129-B',      t:'Registro de veículos',                           arts:10, lastRev:'2026-03-19', revs:3},
+  {id:'ctb_130_139b',n:'CTB arts. 130–139-B',      t:'Licenciamento',                                  arts:10, lastRev:'2026-04-06', revs:3},
+  {id:'ctb_140_160', n:'CTB arts. 140–160',        t:'Habilitação',                                    arts:21, lastRev:'2025-10-11', revs:6},
+  {id:'ctb_256_268', n:'CTB arts. 256–268-A',      t:'Penalidades e pontuação',                        arts:13, lastRev:'2026-06-23', revs:6},
+  {id:'ctb_269_279', n:'CTB arts. 269–279',        t:'Medidas administrativas',                        arts:11, lastRev:'2026-06-28', revs:4},
+  {id:'ctb_inf_leves',  n:'CTB Infrações leves',   t:'Infrações de natureza leve (art. 181 e outros)',  arts:15, lastRev:'2026-02-12', revs:3},
+  {id:'ctb_inf_medias', n:'CTB Infrações médias',  t:'Infrações de natureza média (art. 182 e outros)', arts:20, lastRev:'2026-03-25', revs:3},
+  {id:'ctb_inf_graves', n:'CTB Infrações graves',  t:'Infrações de natureza grave',                    arts:20, lastRev:'2026-05-25', revs:3},
+  {id:'ctb_inf_graviss',n:'CTB Infrações gravíssimas', t:'Infrações de natureza gravíssima',            arts:25, lastRev:'2026-06-11', revs:3},
+  {id:'ctb_proc_admin', n:'CTB Processo administrativo', t:'Processo administrativo de trânsito',       arts:15, lastRev:'2026-07-03', revs:3},
+  {id:'ctb_julg_aut',   n:'CTB Julgamento autuações',   t:'Julgamento das autuações e penalidades',    arts:12, lastRev:'2026-07-06', revs:3},
+  {id:'ctb_res30',      n:'CTB Res. 30/98',             t:'Condutores profissionais (já no edital como resolução)', arts:15, lastRev:'2026-05-30', revs:3}
+];
+
+
+/* ====================== INFRAÇÕES CTB — REVISÃO EM DIAS ALTERNADOS ======================
+   Fase 1 (D+1 a D+20): Gravíssimas (dias ímpares) + Graves (dias pares), ~15-20 min/dia
+   Fase 2 (D+21 a D+30): Médias (2 sessões)
+   Fase 3 (D+31+): Leves (1 sessão) + Flash multiplicadores (véspera)
+   Cada bloco tem ~8-10 itens por sessão para não sobrecarregar */
+const INF_BLOCOS = [
+  // GRAVÍSSIMAS — 54 itens em 6 sessões (~9 por sessão) — dias ímpares D+1,3,5,7,9,11
+  {id:'inf_gvss_1', n:'Gravíssimas 1/6', t:'Arts. 165, 165-A, 170, 173, 174, 175, 186-II, 187-I,II (alcoolemia, risco, velocidade >50%)', arts:9, fase:1, dia:'impar', sessao:1},
+  {id:'inf_gvss_2', n:'Gravíssimas 2/6', t:'Arts. 191, 193, 195, 203, 206, 207, 208, 210, 218-III (contramão, calçada, faixa pedestre)', arts:9, fase:1, dia:'impar', sessao:2},
+  {id:'inf_gvss_3', n:'Gravíssimas 3/6', t:'Arts. 210-A, 211, 215, 218-I, 220-c/pedestre, 228, 229 (transporte irregular, pedestres)', arts:9, fase:1, dia:'impar', sessao:3},
+  {id:'inf_gvss_4', n:'Gravíssimas 4/6', t:'Arts. 230-V/X/XII/XVI/XX, 231-V, 232, 233 (doc/equipamento/licenciamento)', arts:9, fase:1, dia:'impar', sessao:4},
+  {id:'inf_gvss_5', n:'Gravíssimas 5/6', t:'Arts. 244-I/II/III, 247, 250, 251, 252-I/II/III (motocicleta, competição, acessórios)', arts:9, fase:1, dia:'impar', sessao:5},
+  {id:'inf_gvss_6', n:'Gravíssimas 6/6', t:'Arts. 253, 255, multiplicadores ×2/×3/×5/×10/×20/×60 (tabela final)', arts:9, fase:1, dia:'impar', sessao:6},
+  // GRAVES — 43 itens em 5 sessões (~9 por sessão) — dias pares D+2,4,6,8,10
+  {id:'inf_grv_1', n:'Graves 1/5', t:'Arts. 167, 171, 172, 176, 177, 178, 181-VIII/IX/X, 184 (parada/ultrapassagem proibida)', arts:9, fase:1, dia:'par', sessao:1},
+  {id:'inf_grv_2', n:'Graves 2/5', t:'Arts. 185, 186-I, 187-III, 189, 190, 192, 194, 197, 199 (velocidade até 50%, película)', arts:9, fase:1, dia:'par', sessao:2},
+  {id:'inf_grv_3', n:'Graves 3/5', t:'Arts. 200, 201, 202-I/II, 204, 205, 209, 213, 214 (ultrapassagem, faixa, conversão)', arts:9, fase:1, dia:'par', sessao:3},
+  {id:'inf_grv_4', n:'Graves 4/5', t:'Arts. 218-II, 220-vários, 222, 224, 225, 226, 227 (reboque, carga, dimensões)', arts:9, fase:1, dia:'par', sessao:4},
+  {id:'inf_grv_5', n:'Graves 5/5', t:'Arts. 230-vários, 231, 237, 238, 239, 241, 243, 244-IV/V (veículo irregular)', arts:7, fase:1, dia:'par', sessao:5},
+  // MÉDIAS — 49 itens em 2 sessões (~25 por sessão) — D+21 e D+23
+  {id:'inf_med_1', n:'Médias 1/2', t:'Arts. 181-I/III/IV/V/VI, 182-vários, 183, 188, 196, 198 (estacionar/parar, velocidade até 20%)', arts:25, fase:2, sessao:1},
+  {id:'inf_med_2', n:'Médias 2/2', t:'Arts. 216, 217, 219, 220-diversos, 221, 230-diversos, 234, 235, 236, 240, 242, 244-VI (reboque, carga, doc)', arts:24, fase:2, sessao:2},
+  // LEVES — 14 itens em 1 sessão — D+31
+  {id:'inf_lev_1', n:'Leves (todos)', t:'Arts. 169, 179-II, 181-II/VII, 182-IV, 224-II, 230-VIII/IX, 232-II, 244-VII/VIII, 252-IV (atenção, acostamento)', arts:14, fase:3, sessao:1},
+  // FLASH MULTIPLICADORES — D+35 e D+38
+  {id:'inf_mult_1', n:'Multiplicadores (flash)', t:'20 infrações gravíssimas com fator: ×2 (art. 218-III), ×3 (arts. 162-I/II/III, 193, 246), ×5 (arts. 165, 165-A, 175, 202, 203, 230-XX), ×10/×20/×60', arts:20, fase:4, sessao:1},
+  {id:'inf_mult_2', n:'Multiplicadores véspera', t:'Tabela final: só fatores + pegadinhas art. 181×182, art. 218 I/II/III, art. 244 incisos', arts:20, fase:4, sessao:2},
+];
+
+/* ====================== BLOCOS (resoluções CONTRAN) ====================== */
+function fatiar(total, alvo){
+  const n = Math.max(1, Math.ceil(total/alvo));
+  const base = Math.floor(total/n); let resto = total - base*n;
+  const out=[]; let ini=1;
+  for(let i=0;i<n;i++){ let tam = base + (resto>0?1:0); if(resto>0) resto--; out.push([ini, ini+tam-1]); ini += tam; }
+  return out;
+}
+const BLOCOS = [];
+RESOL.forEach((r,ord)=>{
+  r._ord = ord;
+  const faixas = r.blocos || fatiar(r.arts, 20);
+  r._blocos = faixas.map((f,i)=>{
+    const b = {id:r.id+'#'+i, i, res:r, ini:f[0], fim:f[1], qtd:f[1]-f[0]+1,
+               pre:(r.pre||[]).indexOf(i)>=0, alvo:ALVO[r.prio]};
+    BLOCOS.push(b); return b;
+  });
+});
+const BID = {}; BLOCOS.forEach(b=>BID[b.id]=b);
+
+// CTB "blocos-sombra": representam um único artigo-céu por bloco (para custo)
+const CTB_PROPER = CTB_BLOCOS
+  .filter(c=>c.proper)
+  .map(c=>({id:c.id, b:{id:c.id, qtd:c.arts, ctb:c}, est:'R3', due:c.properDue, proper:true}));
+const CTB_FLASH = CTB_BLOCOS.filter(c=>!c.proper);
+
+/* ====================== ESTADO ====================== */
+const KEY='planner_integrado_v3';
+let state = (()=>{ try{ return JSON.parse(localStorage.getItem(KEY)) || {m:{}, ctb:{}} }catch(e){ return {m:{}, ctb:{}} } })();
+if(!state.m) state.m={};
+if(!state.ctb) state.ctb={};
+// marca automaticamente como "L" os blocos pré-lidos
+BLOCOS.forEach(b=>{ if(b.pre && state.m[b.id+'|L']===undefined) state.m[b.id+'|L']=true; });
+// marca CTB proper: L, R1, R2 já feitos (revs:2 = L + R1 + R2); só falta R3
+CTB_BLOCOS.forEach(c=>{
+  if(c.proper){
+    ['L','R1','R2'].forEach(e=>{ if(state.m['ctb|'+c.id+'|'+e]===undefined) state.m['ctb|'+c.id+'|'+e]=true; });
+  }
+});
+function salvar(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function feito(bid,est){
+  // Suporta tanto BLOCOS (mapa) quanto CTB (mapa com prefixo 'ctb|')
+  if(bid.indexOf('ctb|')===0 || (typeof bid==='string' && bid.indexOf('ctb_')===0 && est)) {
+    return !!state.m['ctb|'+bid+'|'+est];
+  }
+  return !!state.m[bid+'|'+est];
+}
+function marcar(bid,est,v){
+  // Se for CTB (passa id com prefixo ctb_ ou chave ctb|...), grava em state.m com prefixo
+  let key;
+  if(typeof bid==='string' && (bid.indexOf('ctb_')===0)){
+    key = 'ctb|'+bid+'|'+est;
+  } else {
+    key = bid+'|'+est;
+  }
+  state.m[key] = (v===undefined? !state.m[key] : v);
+  salvar(); render();
+}
+
+/* ====================== DATAS ====================== */
+function addD(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dataDoDia(i){ return addD(INICIO,i); }
+function curto(d){ return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
+function longo(d){ return d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}); }
+const REAL = (()=>{ const h=new Date(); return new Date(h.getFullYear(),h.getMonth(),h.getDate()); })();
+const HOJE_I = Math.max(0, Math.min(DIAS, Math.round((REAL-INICIO)/86400000)));
+
+/* ====================== MOTOR DO CRONOGRAMA ====================== */
+function custo(it){ return it.b.qtd * MIN_ART[it.est]; }
+function proxEstagio(b,est){ const a=b.alvo; if(!a) return null; const k=a.indexOf(est); return (k>=0 && k<a.length-1)? a[k+1] : null; }
+
+function montarPlano(){
+  const dias=[]; for(let d=0;d<=DIAS;d++) dias.push({d, ativs:[], ctbFlash:[]});
+
+  // Fila de leitura: blocos não pré-lidos, ordenados por prioridade desc
+  const filaL = BLOCOS.filter(b=>!b.pre).slice()
+      .sort((a,b)=> b.res.prio-a.res.prio || a.res._ord-b.res._ord || a.i-b.i);
+
+  // Fila de revisão: começa com os blocos pré-lidos devendo R1 + CTB proper (R3)
+  const filaR = [];
+  BLOCOS.filter(b=>b.pre).forEach((b,k)=> filaR.push({b, est:'R1', due:k<2?0:1}));
+  // Insere CTB proper-review blocks (R3) — viram parte da fila regular
+  CTB_PROPER.forEach(c=> filaR.push(c));
+
+  function agendarProx(itens,d){
+    itens.forEach(it=>{
+      const nx = proxEstagio(it.b, it.est);
+      if(!nx) return;
+      const due = Math.min(d + GAP[it.est], DIAS-1);
+      filaR.push({b:it.b, est:nx, due});
+    });
+  }
+  function ordenaR(){
+    filaR.sort((x,y)=>{
+      if(x.proper && !y.proper) return -1;
+      if(!x.proper && y.proper) return 1;
+      // Ambos proper ou ambos não: usa due; prioridade resolvida no fallback
+      const xPrio = x.b.res ? x.b.res.prio : (x.proper ? 3 : 0);
+      const yPrio = y.b.res ? y.b.res.prio : (y.proper ? 3 : 0);
+      return x.due-y.due || yPrio-xPrio || x.b.id.localeCompare(y.b.id);
+    });
+  }
+  function pegaRevisoes(d, exigirVencida){
+    ordenaR();
+    const itens=[]; let min=0;
+    while(filaR.length){
+      const nx = filaR[0];
+      if(nx.due > d + (exigirVencida?0:2)) break;
+      // Itens "proper" CTB têm custo artificial (arts) — usar ORC-CTB diferente? Mantemos mesma ORC.
+      if(itens.length && min+custo(nx) > ORC+8) break;
+      filaR.shift(); itens.push(nx); min+=custo(nx);
+      if(min >= ORC-8) break;
+    }
+    return {itens,min};
+  }
+  function flash(dia,d,filaF){
+    if(d < FLASH_INI - 6 || !filaF.length) return false;
+    const itens=[]; let min=0;
+    while(filaF.length){
+      const nx=filaF[0];
+      if(itens.length && min + nx.b.qtd*MIN_ART.F > ORC+8) break;
+      filaF.shift(); itens.push(nx); min += nx.b.qtd*MIN_ART.F;
+      if(min >= ORC-10) break;
+    }
+    if(!itens.length) return false;
+    dia.ativs.push({tipo:'F', itens, min:Math.round(min)});
+    return true;
+  }
+
+  const filaF = BLOCOS.filter(b=>b.res.prio>=2).slice()
+      .sort((a,b)=> b.res.prio-a.res.prio || a.res._ord-b.res._ord || a.i-b.i)
+      .map(b=>({b, est:'F'}));
+
+  for(let d=0; d<DIAS; d++){
+    const dia = dias[d];
+    const rev = pegaRevisoes(d, true);
+    if(rev.itens.length){ dia.ativs.push({tipo:'R', itens:rev.itens, min:Math.round(rev.min)}); agendarProx(rev.itens,d); }
+    let guarda=0;
+    while(dia.ativs.length<2 && guarda++<4){
+      if(d<=ULT_LEITURA && filaL.length){
+        const itens=[]; let min=0;
+        while(filaL.length){
+          const nb=filaL[0];
+          if(itens.length && min + nb.qtd*MIN_ART.L > 78) break;
+          filaL.shift(); itens.push({b:nb, est:'L'}); min += nb.qtd*MIN_ART.L;
+          if(min>=52) break;
+        }
+        dia.ativs.push({tipo:'L', itens, min:Math.round(min)});
+        agendarProx(itens,d);
+      } else {
+        const r2 = pegaRevisoes(d,false);
+        if(r2.itens.length){ dia.ativs.push({tipo:'R', itens:r2.itens, min:Math.round(r2.min)}); agendarProx(r2.itens,d); }
+        else if(!flash(dia,d,filaF)) break;
+      }
+    }
+
+    // CTB flash: distribuir 21 blocos em D+26..D+39 (14 dias)
+    // Alocação estática: 5 sessões (D+27, D+30, D+33, D+36, D+39), cada uma com blocos pré-definidos
+    // Nota: a alocação é feita fora do loop - só insere no dia correto
+  }
+
+  // Distribuição estática dos 21 CTB flash blocks em 5 sessões
+  // Ajuste pós-análise de provas DETRAN: blocos prioritários (arts. 5-25 = 29%, arts. 26-67 = 22%) ganham flash extra
+  const sessionDays = [20, 24, 27, 30, 33, 36, 39];
+  // Blocos hot (29% e 22% das provas) entram 2x: nas sessões extras (D+20, D+24) E nas regulares
+    const hotBlocks = CTB_FLASH.filter(c=>c.hot);
+    const normalBlocks = CTB_FLASH.filter(c=>!c.hot);
+    // Sessões D+20 e D+24: só hot blocks (flash antecipado)
+    // Sessões D+27..D+39: todos (hot repetidos + normais)
+    const allForLater = [...hotBlocks, ...normalBlocks];
+    const blocosPerSession = Math.ceil(allForLater.length / (sessionDays.length - 2)); // ~5 por sessão regular
+  // D+20 e D+24: flash antecipado APENAS dos blocos hot (arts. 5-25 e 26-67 = 51% das provas)
+  [20, 24].forEach(dayIdx => {
+    if(dayIdx >= DIAS) return;
+    const dia = dias[dayIdx];
+    const custoTotal = hotBlocks.reduce((s,c) => s + c.arts * MIN_ART.CF, 0);
+    dia.ctbFlash = hotBlocks;
+    dia.ativs.push({tipo:'CF', itens: hotBlocks.map(c=>({b:{id:c.id, qtd:c.arts, ctb:c}, est:'CF'})), min: Math.round(custoTotal)});
+  });
+  // D+27..D+39: flash regular de TODOS os blocos (hot repetidos + normais)
+  const regularDays = [27, 30, 33, 36, 39];
+  const bps = Math.ceil(allForLater.length / regularDays.length);
+  regularDays.forEach((dayIdx, sIdx) => {
+    const start = sIdx * bps;
+    const end = Math.min(start + bps, allForLater.length);
+    const bloco = allForLater.slice(start, end);
+    if(!bloco.length || dayIdx >= DIAS) return;
+    const dia = dias[dayIdx];
+    const custoTotal = bloco.reduce((s,c) => s + c.arts * MIN_ART.CF, 0);
+    dia.ctbFlash = bloco;
+    dia.ativs.push({tipo:'CF', itens: bloco.map(c=>({b:{id:c.id, qtd:c.arts, ctb:c}, est:'CF'})), min: Math.round(custoTotal)});
+  });
+
+  // === INFRAÇÕES EM DIAS ALTERNADOS ===
+  // Fase 1: Gravíssimas (ímpares D+1,3,5,7,9,11) + Graves (pares D+2,4,6,8,10)
+  INF_BLOCOS.filter(b=>b.fase===1 && b.dia==='impar').forEach((b,i)=>{
+    const dayIdx = 1 + i*2; // D+1, D+3, D+5, D+7, D+9, D+11
+    if(dayIdx < DIAS) {
+      const dia = dias[dayIdx];
+      const custoMin = Math.round(b.arts * 1.8); // ~1.8 min/item (revisão dirigida)
+      dia.ativs.push({tipo:'IF', itens:[{b:{id:b.id, qtd:b.arts, inf:b}, est:'IF'}], min:custoMin});
+    }
+  });
+  INF_BLOCOS.filter(b=>b.fase===1 && b.dia==='par').forEach((b,i)=>{
+    const dayIdx = 2 + i*2; // D+2, D+4, D+6, D+8, D+10
+    if(dayIdx < DIAS) {
+      const dia = dias[dayIdx];
+      const custoMin = Math.round(b.arts * 1.8);
+      dia.ativs.push({tipo:'IF', itens:[{b:{id:b.id, qtd:b.arts, inf:b}, est:'IF'}], min:custoMin});
+    }
+  });
+  // Fase 2: Médias em D+21 e D+23
+  INF_BLOCOS.filter(b=>b.fase===2).forEach((b,i)=>{
+    const dayIdx = 21 + i*2; // D+21, D+23
+    if(dayIdx < DIAS) {
+      const dia = dias[dayIdx];
+      const custoMin = Math.round(b.arts * 1.2); // médias = mais rápido (já viu graves/gvss)
+      dia.ativs.push({tipo:'IF', itens:[{b:{id:b.id, qtd:b.arts, inf:b}, est:'IF'}], min:custoMin});
+    }
+  });
+  // Fase 3: Leves em D+31
+  INF_BLOCOS.filter(b=>b.fase===3).forEach(b=>{
+    if(31 < DIAS) {
+      const dia = dias[31];
+      const custoMin = Math.round(b.arts * 1.0); // leves = rápido
+      dia.ativs.push({tipo:'IF', itens:[{b:{id:b.id, qtd:b.arts, inf:b}, est:'IF'}], min:custoMin});
+    }
+  });
+  // Fase 4: Flash multiplicadores em D+35 e D+38
+  INF_BLOCOS.filter(b=>b.fase===4).forEach((b,i)=>{
+    const dayIdx = i===0 ? 35 : 38;
+    if(dayIdx < DIAS) {
+      const dia = dias[dayIdx];
+      const custoMin = Math.round(b.arts * 0.6); // flash = super rápido
+      dia.ativs.push({tipo:'IF', itens:[{b:{id:b.id, qtd:b.arts, inf:b}, est:'IF'}], min:custoMin});
+    }
+  });
+
+  return {dias, sobraL:filaL, sobraR:filaR};
+}
+const PLANO = montarPlano();
+const AGENDADOS = new Set();
+PLANO.dias.forEach(x=>x.ativs.forEach(a=>a.itens.forEach(it=>AGENDADOS.add(it.b.id+'|'+it.est))));
+const FORA = PLANO.sobraL.slice();
+
+/* ====================== MÉTRICAS ====================== */
+function alvoTotal(){ let n=0; BLOCOS.forEach(b=> n+=b.alvo.length); return n; }
+function feitosTotal(){ let n=0; BLOCOS.forEach(b=> b.alvo.forEach(e=>{ if(feito(b.id,e)) n++; })); return n; }
+function progressoRes(r){
+  let a=0,f=0; r._blocos.forEach(b=> b.alvo.forEach(e=>{ a++; if(feito(b.id,e)) f++; }));
+  return a? Math.round(f*100/a):0;
+}
+function infTotal(){ return INF_BLOCOS.length; }
+function infFeitos(){ return INF_BLOCOS.filter(b=>feito(b.id,'IF')).length; }
+function ctbFlashTotal(){ return CTB_BLOCOS.length; }
+function ctbFlashFeitos(){ return CTB_BLOCOS.filter(c=>feito(c.id,'CF')).length; }
+function atrasadas(){
+  const out=[];
+  PLANO.dias.forEach(dia=>{
+    if(dia.d>=HOJE_I) return;
+    dia.ativs.forEach(a=>{
+      // CTB flash (CF) não conta como atraso — é atividade bônus
+      if(a.tipo==='CF') return;
+      a.itens.forEach(it=>{ if(!feito(it.b.id,it.est)) out.push({...it, d:dia.d}); });
+    });
+  });
+  return out;
+}
+
+/* ====================== RENDER ====================== */
+const est = {L:'Leitura', R1:'Revisão 1', R2:'Revisão 2', R3:'Revisão 3', F:'Flash de véspera', CF:'Flash CTB'};
+function nomeItem(it){
+  if(it.b.ctb) return '<b>'+it.b.ctb.n+'</b> <span>— '+it.b.ctb.t+'</span>';
+  return '<b>'+it.b.res.n.replace('Res. CONTRAN ','')+'</b> <span>[arts. '+it.b.ini+'–'+it.b.fim+']</span>';
+}
+function htmlAtiv(a,idx,dia){
+  const done = a.itens.every(it=>feito(it.b.id,it.est));
+  const tit = a.tipo==='L' ? 'Leitura nova' : a.tipo==='F' ? 'Flash de véspera' : a.tipo==='CF' ? 'Flash CTB (consolidação)' : a.tipo==='IF' ? 'Infrações CTB (revisão dirigida)' : 'Revisão';
+  const tipoCls = a.tipo==='CF' ? 'CF' : a.tipo;
+  const slotCls = a.tipo==='CF' ? 'slotnum ctb' : 'slotnum';
+  let h = '<div class="ativ '+tipoCls+(done?' done':'')+'">'+
+    '<h3><span class="'+slotCls+'">ATIV. '+(idx+1)+'</span> '+tit+'</h3>'+
+    '<div class="sub">~'+a.min+' min · '+a.itens.reduce((s,i)=>s+i.b.qtd,0)+' artigos</div>';
+  a.itens.forEach(it=>{
+    const on = feito(it.b.id,it.est);
+    h += '<div class="item">'+
+      '<button class="chk'+(on?' on':'')+'" onclick="marcar(\''+it.b.id+'\',\''+it.est+'\')" title="marcar como feito">✓</button>'+
+      '<span class="est '+it.est+'">'+it.est+'</span>'+
+      '<span class="nm">'+nomeItem(it)+'</span></div>';
+  });
+  return h+'</div>';
+}
+function renderHoje(){
+  const dia = PLANO.dias[HOJE_I];
+  document.getElementById('hojeData').textContent = longo(REAL) + (HOJE_I>=DIAS?' — dia da prova':' · faltam '+(DIAS-HOJE_I)+' dias');
+  const c = document.getElementById('hojeAtivs');
+  if(HOJE_I>=DIAS){ c.innerHTML='<div class="vazio">Dia da prova. Só revisão leve e cabeça fria.</div>'; }
+  else if(HOJE_I>FLASH_INI){ c.innerHTML='<div class="vazio"><b>Véspera/semana final</b> — programa encerrado. Use para questões, simulados, revisão leve dos mapas mentais e descanso.</div>'; }
+  else if(!dia.ativs.length){ c.innerHTML='<div class="vazio">Sem atividade fixa hoje — use para tirar atrasos ou resolver questões.</div>'; }
+  else c.innerHTML = dia.ativs.map((a,i)=>htmlAtiv(a,i,dia)).join('');
+
+  const at = atrasadas();
+  const box = document.getElementById('atrasados');
+  if(!at.length){ box.innerHTML='<div class="vazio">Nada atrasado. Plano em dia.</div>'; return; }
+  box.innerHTML = at.map(it=>'<div class="item">'+
+      '<button class="chk" onclick="marcar(\''+it.b.id+'\',\''+it.est+'\')">✓</button>'+
+      '<span class="est '+it.est+'">'+it.est+'</span>'+
+      '<span class="nm">'+nomeItem(it)+' <span style="color:var(--late)">· '+curto(dataDoDia(it.d))+'</span></span></div>').join('');
+}
+
+let mesAtual = new Date(INICIO.getFullYear(), INICIO.getMonth(), 1);
+function mudaMes(n){ mesAtual.setMonth(mesAtual.getMonth()+n); renderCal(); }
+function irHoje(){ mesAtual = new Date(REAL.getFullYear(), REAL.getMonth(), 1); renderCal(); }
+function renderCal(){
+  const t = mesAtual.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('calT').textContent = t;
+  const y=mesAtual.getFullYear(), m=mesAtual.getMonth();
+  const off = (new Date(y,m,1).getDay()+6)%7, ult = new Date(y,m+1,0).getDate();
+  const cells = Math.ceil((off+ult)/7)*7;
+  let h = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>'<div class="dn">'+x+'</div>').join('');
+  for(let i=0;i<cells;i++){
+    const dt = new Date(y,m,i-off+1);
+    if(dt.getMonth()!==m){ h+='<div class="cel out"></div>'; continue; }
+    const idx = Math.round((dt-INICIO)/86400000);
+    const dia = (idx>=0 && idx<=DIAS)? PLANO.dias[idx] : null;
+    const eProva = idx===DIAS;
+    let cls='cel';
+    if(dt.getTime()===REAL.getTime()) cls+=' hoje';
+    if(eProva) cls+=' prova';
+    else if(dia){
+      // pendência considera só atividades principais (não CF)
+      const pend = dia.ativs.some(a=>a.tipo!=='CF' && a.itens.some(it=>!feito(it.b.id,it.est)));
+      if(idx<HOJE_I && pend) cls+=' atraso';
+      else if(dia.ativs.some(a=>a.tipo!=='CF') && !pend) cls+=' ok';
+    }
+    let mini='';
+    if(eProva) mini='<div class="mini F">PROVA</div>';
+    else if(dia){
+      // Mostra primeiro tag principal, depois CTB flash com cor distinta
+      const principal = dia.ativs.find(a=>a.tipo!=='CF');
+      if(principal){
+        const it = principal.itens[0];
+        if(it){
+          const on=feito(it.b.id,it.est);
+          const label = principal.tipo==='L' ? 'L'
+                       : principal.tipo==='F' ? 'F'
+                       : it.est;
+          const titulo = it.b.ctb ? it.b.ctb.n : (it.b.res.n.replace('Res. CONTRAN ',''));
+          mini += '<div class="mini '+label+(on?' feito':'')+'">'+label+' '+titulo+'</div>';
+        }
+      }
+      if(dia.ctbFlash && dia.ctbFlash.length){
+        const n=dia.ctbFlash.length;
+        const allDone = dia.ctbFlash.every(c=>feito(c.id,'CF'));
+        mini += '<div class="mini CF'+(allDone?' feito':'')+'">CF · '+n+' bloco'+(n>1?'s':'')+'</div>';
+      }
+    }
+    h += '<div class="'+cls+'" onclick="detalhe('+idx+')"><div class="d">'+dt.getDate()+'</div>'+mini+'</div>';
+  }
+  document.getElementById('cal').innerHTML = h;
+}
+function detalhe(idx){
+  const box = document.getElementById('detalhe');
+  if(idx<0 || idx>DIAS){ box.innerHTML='<div class="vazio">Fora da janela do plano.</div>'; return; }
+  const d = dataDoDia(idx);
+  let h = '<div style="font-weight:700;font-size:13px;margin-bottom:10px;text-transform:capitalize">'+longo(d)+' · D+'+idx+'</div>';
+  if(idx===DIAS){ h+='<div class="vazio">Dia da prova — 30 min de revisão relâmpago pela manhã e nada de conteúdo novo.</div>'; }
+  else if(idx>FLASH_INI){
+    h += '<div class="vazio"><b>Véspera/semana final</b> — programa encerrado. Use para questões, simulados, revisão leve dos mapas mentais e descanso. Nada de conteúdo novo.</div>';
+  }
+  else {
+    const dia = PLANO.dias[idx];
+    h += dia.ativs.length ? dia.ativs.map((a,i)=>htmlAtiv(a,i,dia)).join('') : '<div class="vazio">Dia livre — use para questões ou para tirar atraso.</div>';
+  }
+  box.innerHTML = h;
+}
+function renderRes(){
+  let h='';
+  RESOL.forEach(r=>{
+    const p = progressoRes(r);
+    h += '<div class="rcard"><div class="rtop">'+
+      '<div class="nm"><b>'+r.n+'</b>'+(r.ok?'':' <i title="número de artigos aproximado — confira no texto oficial" style="color:var(--p1);font-style:normal;font-size:11px">≈ conferir</i>')+
+      '<p>'+r.t+'</p></div>'+
+      '<span class="prio p'+r.prio+'">'+['BAIXA','MÉDIA','ALTA','CRÍTICA'][r.prio]+'</span></div>';
+    h += '<div class="bar"><i style="width:'+p+'%"></i></div>'+
+         '<div style="font-size:11px;color:var(--ink-3);margin-top:4px">'+p+'% do alvo · '+r.arts+' artigos · '+r._blocos.length+' blocos · alvo: '+ALVO[r.prio].join(' → ')+'</div>'+
+         '<div class="trilha">';
+    r._blocos.forEach(b=>{
+      const ultimo = b.alvo.filter(e=>feito(b.id,e)).slice(-1)[0];
+      h += '<div class="bloco"><div class="bl">arts. '+b.ini+'–'+b.fim+' <i>'+(ultimo||'—')+'</i></div><div class="steps">';
+      ['L','R1','R2','R3'].forEach(e=>{
+        const noAlvo = b.alvo.indexOf(e)>=0;
+        h += '<button class="step '+e+(feito(b.id,e)?' on':'')+(noAlvo?'':' opt')+'" title="'+est[e]+(noAlvo?'':' (extra)')+'" onclick="marcar(\''+b.id+'\',\''+e+'\')">'+e+'</button>';
+      });
+      h += '</div></div>';
+    });
+    h += '</div></div>';
+  });
+  document.getElementById('listaRes').innerHTML = h;
+  const nomes = FORA.map(b=>b.res.n.replace('Res. CONTRAN ','')).filter((v,i,a)=>a.indexOf(v)===i);
+  document.getElementById('avisoRes').innerHTML = FORA.length
+    ? '<b>Corte consciente:</b> não cabe ler tudo até 20/09. Ficaram fora da leitura programada '+FORA.length+' blocos: '+nomes.join(', ')+'. Trate-os como leitura seca de véspera, se sobrar tempo — não sacrifique as revisões das críticas por eles.'
+    : '<b>Plano fechado:</b> todos os blocos couberam na janela até a prova.';
+}
+function renderCTB(){
+  let h='';
+  // Agrupa por categoria para facilitar leitura
+  const grupos = [
+    {titulo:'Blocos com revisão própria agendada (R3)', itens: CTB_BLOCOS.filter(c=>c.proper)},
+    {titulo:'Blocos para flash de consolidação', itens: CTB_BLOCOS.filter(c=>!c.proper)}
+  ];
+  grupos.forEach(g=>{
+    if(!g.itens.length) return;
+    h += '<div style="font-size:12px;font-weight:700;color:var(--ink-2);margin:6px 0 8px;text-transform:uppercase;letter-spacing:.5px">'+g.titulo+'</div>';
+    g.itens.forEach(c=>{
+      const feitoFlag = feito(c.id,'CF');
+      const properDone = !c.proper || ['L','R1','R2','R3'].every(e=>feito(c.id,e));
+      h += '<div class="ctbcard">'+
+        '<div class="top">'+
+          '<div class="nm"><b>'+c.n+'</b><p>'+c.t+'</p></div>'+
+          '<span class="pill">'+(c.proper?'R3 já agendado':'Flash')+'</span>'+
+        '</div>'+
+        '<div class="meta">'+c.arts+' artigos · última revisão: '+curto(new Date(c.lastRev+'T00:00:00'))+' · '+c.revs+' revisões anteriores'+(c.proper?' · <b style="color:var(--R3)">R3 marcado automaticamente</b>':'')+'</div>'+
+        '<div class="actions">'+
+          '<button class="chk'+(feitoFlag?' on':'')+'" onclick="marcar(\''+c.id+'\',\'CF\')" title="marcar flash como feito">✓</button>'+
+          '<span class="est CF">CF</span>'+
+          '<span style="font-size:12px">Flash de consolidação'+(c.proper? ' (além do R3 já agendado)':'')+'</span>'+
+        '</div>'+
+      '</div>';
+    });
+  });
+  document.getElementById('listaCTB').innerHTML = h;
+  // Aviso contextual
+  const done = ctbFlashFeitos(), total = ctbFlashTotal();
+  document.getElementById('avisoCTB').innerHTML =
+    '<b>23 blocos · 21 flashes + 2 revisões próprias</b>. Os blocos <b>arts. 51–67</b> e <b>arts. 80–90</b> (revs:2, ainda fracos) ganham <b>R3 próprio</b> nos dias D+3 e D+7. Os outros 21 blocos ganham <b>flash de consolidação</b> distribuído em 5 sessões entre 06/set e 19/set (D+27 a D+39) — ~30 min cada. Progresso: <b>'+done+'/'+total+'</b> flashes concluídos.';
+}
+function renderCron(){
+  document.getElementById('cronSub').textContent = 'de '+curto(INICIO)+' a '+curto(PROVA);
+  let h='';
+  for(let d=0; d<=DIAS; d++){
+    const dt=dataDoDia(d), dia=PLANO.dias[d];
+    let cn = '';
+    if(d===DIAS) cn = '<b style="color:var(--p3)">PROVA — DETRAN/AL</b>';
+    else if(!dia.ativs.length && d>FLASH_INI) cn='<span style="color:var(--ink-3)">véspera — revisão leve, questões, descanso</span>';
+    else if(!dia.ativs.length) cn='<span style="color:var(--ink-3)">livre / questões</span>';
+    else cn = dia.ativs.map(a=>{
+      return a.itens.map(it=>{
+        const tag = a.tipo==='CF' ? '<span class="est CF">CF</span> '
+                  : '<span class="est '+it.est+'">'+it.est+'</span> ';
+        return tag + nomeItem(it);
+      }).join(' &nbsp;+&nbsp; ');
+    }).join('<br>');
+    h += '<div class="lin'+(d===HOJE_I?' hoje':'')+'"><div class="dt">'+dt.toLocaleDateString('pt-BR',{weekday:'short'})+' '+curto(dt)+' · D+'+d+'</div><div class="cn">'+cn+'</div></div>';
+  }
+  document.getElementById('cron').innerHTML = h;
+}
+function renderStats(){
+  const alvo=alvoTotal(), f=feitosTotal(), pct=Math.round(f*100/alvo);
+  const at=atrasadas().length;
+  const lidos = BLOCOS.filter(b=>feito(b.id,'L')).length;
+  const ctbDone = ctbFlashFeitos(), ctbTot = ctbFlashTotal();
+  document.getElementById('stats').innerHTML =
+   '<div class="stat gold"><div class="v">'+Math.max(0,DIAS-HOJE_I)+'</div><div class="l">dias até a prova</div></div>'+
+   '<div class="stat"><div class="v">'+pct+'%</div><div class="l">progresso do plano</div><div class="bar"><i style="width:'+pct+'%"></i></div></div>'+
+   '<div class="stat ok"><div class="v">'+lidos+'/'+BLOCOS.length+'</div><div class="l">blocos lidos</div></div>'+
+   '<div class="stat"><div class="v">'+(f-lidos)+'</div><div class="l">revisões concluídas</div></div>'+
+   '<div class="stat ctb"><div class="v">'+ctbDone+'/'+ctbTot+'</div><div class="l">CTB Flash</div><div class="bar"><i style="width:'+Math.round(ctbDone*100/ctbTot)+'%"></i></div></div>'+
+   '<div class="stat '+(at?'late':'ok')+'"><div class="v">'+at+'</div><div class="l">itens atrasados</div></div>';
+}
+function render(){ renderStats(); renderHoje(); renderCal(); renderRes(); renderCTB(); renderCron(); }
+
+/* ====================== BACKUP ====================== */
+function exportar(){
+  const blob = new Blob([JSON.stringify(state)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='progresso_integrado_v3_'+iso(REAL)+'.json'; a.click();
+}
+function importar(inp){
+  const f=inp.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ const o=JSON.parse(rd.result); if(o&&o.m){ state=o; salvar(); render(); } }catch(e){ alert('Arquivo inválido.'); } };
+  rd.readAsText(f);
+}
+function zerar(){
+  if(!confirm('Apagar todas as marcações de blocos? Não dá para desfazer.')) return;
+  state={m:{}}; BLOCOS.forEach(b=>{ if(b.pre) state.m[b.id+'|L']=true; });
+  CTB_BLOCOS.forEach(c=>{ if(c.proper) ['L','R1','R2'].forEach(e=> state.m['ctb|'+c.id+'|'+e]=true); });
+  salvar(); render();
+}
+
+/* ====================== ABAS ====================== */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); document.getElementById('p-'+t.dataset.p).classList.add('on');
+}));
+
+render();
+detalhe(HOJE_I);
+</script>
+</body>
+</html>
